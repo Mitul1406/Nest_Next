@@ -23,17 +23,14 @@ export class MailService {
         <tr>
           <td align="center">
             
-            <!-- Main Container -->
             <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:10px; overflow:hidden;">
               
-              <!-- Header -->
               <tr>
                 <td align="center" style="background:#4A90E2; color:#ffffff; padding:20px;">
                   <h1 style="margin:0;">🎉 Happy Birthday!</h1>
                 </td>
               </tr>
 
-              <!-- Body -->
               <tr>
                 <td style="padding:30px; text-align:center; color:#333;">
                   <h2 style="margin-top:0;">Dear ${name}, 🎂</h2>

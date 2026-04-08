@@ -10,7 +10,7 @@ export class BirthdayCronService {
     private mailService: MailService,
   ) {}
 
-  @Cron('10 * * * * *', { timeZone: 'Asia/Kolkata' })
+  @Cron('0 0 * * *', { timeZone: 'Asia/Kolkata' })
   async sendBirthdayWishes() {
     console.log('🎂 Checking birthdays...');
 
