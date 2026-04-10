@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -45,13 +45,13 @@ export class AuthService {
         const user = await this.userRepository.findOne({where:{email: dto.email}});
 
         if(!user){
-            throw new UnauthorizedException({message: 'Invalid credentials'});
+            throw new BadRequestException({message: 'Invalid credentials'});
         }
 
         const isMatch = await bcrypt.compare(dto.password, user.password);
 
         if(!isMatch){
-            throw new UnauthorizedException({message: 'Invalid credentials'});
+            throw new BadRequestException({message: 'Invalid credentials'});
         }
 
         const payload = { sub: user.id, email: user.email };
