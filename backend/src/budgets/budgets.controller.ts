@@ -9,6 +9,7 @@ import {
   UseGuards,
   Req,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +22,7 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { successResponse } from '../common/response.helper';
+import { PaginationOptions, PaginationPipe } from '../common/pipes/pagination.pipe';
 
 @ApiTags('Budgets')
 @ApiBearerAuth()
@@ -39,11 +41,15 @@ export class BudgetsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all budgets' })
-  async findAll(@Req() req: any) {
-    const data = await this.budgetsService.findAll(req.user.id);
-    return successResponse(data, 'Budgets fetched successfully');
-  }
+@ApiOperation({ summary: 'Get all budgets' })
+async findAll(
+  @Req() req: any,
+  @Query(PaginationPipe) filters: any,
+) {
+  const result = await this.budgetsService.findAll(req.user.id, filters);
+
+  return successResponse(result, 'Budgets fetched successfully');
+}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single budget by ID' })

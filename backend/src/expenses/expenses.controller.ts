@@ -59,7 +59,7 @@ export class ExpensesController {
     @Query(PaginationPipe) filters: FilterExpenseDto,
   ) {
     const result = await this.expensesService.findAll(req.user.id, filters);
-    return successResponse(result.data, 'Expenses fetched successfully');
+    return successResponse(result, 'Expenses fetched successfully');
   }
 
   @Get(':id')

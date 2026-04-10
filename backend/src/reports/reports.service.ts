@@ -24,6 +24,7 @@ export class ReportsService {
       .andWhere('MONTH(expense.date) = :month', { month })
       .andWhere('YEAR(expense.date) = :year', { year })
       .groupBy('expense.category')
+      .orderBy('totalSpent', 'DESC')
       .getRawMany();
 
     const budgets = await this.budgetRepository.find({
@@ -44,7 +45,6 @@ export class ReportsService {
         budgetAmount !== null
           ? +((totalSpent / budgetAmount) * 100).toFixed(2)
           : null;
-
       return {
         category: e.category,
         totalSpent,
@@ -64,11 +64,16 @@ export class ReportsService {
     });
 
     const grandTotal = summary.reduce((sum, s) => sum + s.totalSpent, 0);
+    const totalTransactions = summary.reduce(
+  (sum, s) => sum + s.totalTransactions,
+  0,
+);
 
     return {
       month,
       year,
       grandTotal: +grandTotal.toFixed(2),
+      totalTransactions,
       categories: summary,
     };
   }
@@ -175,11 +180,15 @@ export class ReportsService {
     const now = new Date();
     const month = now.getMonth() + 1;
     const year = now.getFullYear();
+    const prevMonthDate = new Date(year, month - 2);
+const lastMonth = prevMonthDate.getMonth() + 1;
+const lastYear = prevMonthDate.getFullYear();
 
-    const [monthly, yearly, recent] = await Promise.all([
+    const [monthly, yearly, recent,lastMonthSummary] = await Promise.all([
       this.getMonthlySummary(userId, month, year),
       this.getYearlySummary(userId, year),
       this.getRecentExpenses(userId, 5),
+      this.getMonthlySummary(userId, lastMonth, lastYear),
     ]);
 
     const exceededBudgets = monthly.categories.filter(
@@ -195,7 +204,14 @@ export class ReportsService {
         year,
         totalSpent: monthly.grandTotal,
         categoryCount: monthly.categories.length,
+        totalTransactions: monthly.totalTransactions,
       },
+      lastMonth: {
+    month: lastMonth,
+    year: lastYear,
+    totalSpent: lastMonthSummary.grandTotal,
+    totalTransactions: lastMonthSummary.totalTransactions,
+  },
       currentYear: {
         year,
         totalSpent: yearly.grandTotal,

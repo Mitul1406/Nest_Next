@@ -41,12 +41,65 @@ export class BudgetsService {
     return await this.budgetRepository.save(budget);
   }
 
-  async findAll(userId: string) {
-    return await this.budgetRepository.find({
-      where: { userId },
-      order: { year: 'DESC', month: 'DESC' },
-    });
-  }
+async findAll(userId: string, filters: any) {
+  const { limit, skip, page, month, year } = filters;
+
+  const now = new Date();
+  const currentMonth = month || now.getMonth() + 1;
+  const currentYear = year || now.getFullYear();
+
+  const [budgets, total] = await this.budgetRepository.findAndCount({
+    where: {
+      userId,
+      month: currentMonth,
+      year: currentYear,
+    },
+    order: { category: 'ASC' },
+    take: limit,
+    skip,
+  });
+
+  const budgetStats = await Promise.all(
+    budgets.map(async (b) => {
+      const spentResult = await this.expenseRepository
+        .createQueryBuilder('expense')
+        .select('COALESCE(SUM(expense.amount), 0)', 'total')
+        .where('expense.userId = :userId', { userId })
+        .andWhere('expense.category = :category', { category: b.category })
+        .andWhere('MONTH(expense.date) = :month', { month: currentMonth })
+        .andWhere('YEAR(expense.date) = :year', { year: currentYear })
+        .getRawOne();
+
+      const spent = Number(spentResult.total) || 0;
+      const percentage = b.amount > 0 ? (spent / b.amount) * 100 : 0;
+
+      let status = 'ok';
+      if (percentage >= 100) status = 'exceeded';
+      else if (percentage >= 80) status = 'near_limit';
+
+      return {
+        ...b,
+        spent,
+        percentage: Math.min(percentage, 100),
+        status,
+      };
+    }),
+  );
+
+  return {
+    data: budgetStats,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+    meta: {
+      month: currentMonth,
+      year: currentYear,
+    },
+  };
+}
 
   async findOne(userId: string, id: string) {
     const budget = await this.budgetRepository.findOne({ where: { id } });
